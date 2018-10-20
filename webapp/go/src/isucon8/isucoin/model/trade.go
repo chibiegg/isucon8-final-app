@@ -12,10 +12,13 @@ import (
 
 //go:generate scanner
 type Trade struct {
-	ID        int64     `json:"id"`
-	Amount    int64     `json:"amount"`
-	Price     int64     `json:"price"`
-	CreatedAt time.Time `json:"created_at"`
+	ID           int64     `json:"id"`
+	Amount       int64     `json:"amount"`
+	Price        int64     `json:"price"`
+	CreatedAt    time.Time `json:"created_at"`
+	CreatedAtSec time.Time `json:"created_at_sec"`
+	CreatedAtMin time.Time `json:"created_at_min"`
+	CreatedAtHou time.Time `json:"created_at_hou"`
 }
 
 //go:generate scanner
@@ -124,7 +127,13 @@ func reserveOrder(d QueryExecutor, order *Order, price int64) (int64, error) {
 }
 
 func commitReservedOrder(tx *sql.Tx, order *Order, targets []*Order, reserves []int64) error {
-	res, err := tx.Exec(`INSERT INTO trade (amount, price, created_at) VALUES (?, ?, NOW(6))`, order.Amount, order.Price)
+	res, err := tx.Exec(`
+INSERT INTO trade (amount, price, created_at, created_at_sec, created_at_min, created_at_hou) 
+VALUES (?, ?, NOW(6), 
+STR_TO_DATE(DATE_FORMAT(NOW(), '%Y-%m-%d %H:%i:%s'), '%Y-%m-%d %H:%i:%s'), 
+STR_TO_DATE(DATE_FORMAT(NOW(), '%Y-%m-%d %H:%i:00'), '%Y-%m-%d %H:%i:%s'), 
+STR_TO_DATE(DATE_FORMAT(NOW(), '%Y-%m-%d %H:00:00'), '%Y-%m-%d %H:%i:%s')
+)`, order.Amount, order.Price)
 	if err != nil {
 		return errors.Wrap(err, "insert trade")
 	}
