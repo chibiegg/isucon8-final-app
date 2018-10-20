@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"isucon8/isucoin/controller"
+	"isucon8/isucoin/model"
 	"log"
 	"net/http"
 	"os"
@@ -37,7 +38,7 @@ func getEnv(key, def string) string {
 func main() {
 	var (
 		port   = getEnv("APP_PORT", "5000")
-		dbhost = getEnv("DB_HOST", "127.0.0.1")
+		dbhost = getEnv("DB_HOST", "isucon8-02.ishikari-dc.jp")
 		dbport = getEnv("DB_PORT", "13306")
 		dbuser = getEnv("DB_USER", "isucon")
 		dbpass = getEnv("DB_PASSWORD", "isucon")
@@ -58,6 +59,7 @@ func main() {
 	store := sessions.NewCookieStore([]byte(SessionSecret))
 
 	h := controller.NewHandler(db, store)
+	model.InitTcMap(db)
 
 	router := httprouter.New()
 	router.POST("/initialize", h.Initialize)

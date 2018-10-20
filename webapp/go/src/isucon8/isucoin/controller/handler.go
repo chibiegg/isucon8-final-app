@@ -89,6 +89,7 @@ func (h *Handler) InternalInitialize(w http.ResponseWriter, r *http.Request, _ h
 	err := h.txScope(func(tx *sql.Tx) error {
 		return model.SyncSetting(tx)
 	})
+	model.InitTcMap(h.db)
 
 	if err != nil {
 		h.handleError(w, err, 500)

@@ -42,7 +42,8 @@ var (
 	tcDeltaMap map[string]*CandlestickStore
 )
 
-func initTcMap(d QueryExecutor) {
+func InitTcMap(d QueryExecutor) {
+	log.Println("init tc map")
 	BaseTime := time.Date(2018, 10, 10, 10, 0, 0, 0, time.Local)
 
 	tcDeltaMap = make(map[string]*CandlestickStore)
@@ -72,10 +73,15 @@ func (cs *CandlestickStore) GetAndCacheIfPossibleInter(d QueryExecutor, mt time.
 
 	possibleToCache := threshold
 
+	log.Println("calling GetCandlestickData")
+
 	res, err := GetCandlestickData(d, cs.cachedLatest, colName)
 	if err != nil {
 		return nil , err;
 	}
+
+	log.Println("called GetCandlestickData")
+
 	// res MUST be sorted by time
 	cs.m.Lock()
 	defer cs.m.Unlock()
@@ -88,6 +94,7 @@ func (cs *CandlestickStore) GetAndCacheIfPossibleInter(d QueryExecutor, mt time.
 			}
 		}
 	}
+	log.Println("building ans")
 
 	ans := make([]*CandlestickData, 0)
 
@@ -97,7 +104,11 @@ func (cs *CandlestickStore) GetAndCacheIfPossibleInter(d QueryExecutor, mt time.
 		if ok {
 			ans = append(ans, val)
 		}
+
+		curTime = curTime.Add(cs.delta)
 	}
+
+	log.Println("building ans")
 
 	return ans, nil
 }
@@ -128,6 +139,7 @@ func GetCandlestickData(d QueryExecutor, mt time.Time, timeColumnName string) ([
 		JOIN trade b ON b.id = m.max_id
 		ORDER BY m.t
 	`, timeColumnName)
+
 	return scanCandlestickDatas(d.Query(query, mt))
 }
 
