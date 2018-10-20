@@ -11,5 +11,5 @@ ansible-playbook -u isucon -c paramiko -kKs -i hosts site.yml
 *without password*
 
 ```
-ansible-playbook -u isucon -c paramiko -i hosts site.yml
+ansible-playbook -u isucon -c paramiko -s -i hosts site.yml
 ```
