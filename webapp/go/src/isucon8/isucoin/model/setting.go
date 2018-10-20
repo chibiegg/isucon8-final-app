@@ -36,25 +36,25 @@ func SetSetting(d QueryExecutor, k, v string) error {
 }
 
 func SyncSetting(d QueryExecutor) error {
-	s, err := scanSetting(d.Query(`SELECT * FROM setting WHERE name = bank_endpoint`))
+	s, err := scanSetting(d.Query(`SELECT * FROM setting WHERE name = "bank_endpoint"`))
 	if err != nil {
 		return err
 	}
 	internalSetting.bankEndpoint = s.Val
 
-	s, err = scanSetting(d.Query(`SELECT * FROM setting WHERE name = bank_appid`))
+	s, err = scanSetting(d.Query(`SELECT * FROM setting WHERE name = "bank_appid"`))
 	if err != nil {
 		return err
 	}
 	internalSetting.bankAppid = s.Val
 
-	s, err = scanSetting(d.Query(`SELECT * FROM setting WHERE name = log_endpoint`))
+	s, err = scanSetting(d.Query(`SELECT * FROM setting WHERE name = "log_endpoint"`))
 	if err != nil {
 		return err
 	}
 	internalSetting.logEndpoint = s.Val
 
-	s, err = scanSetting(d.Query(`SELECT * FROM setting WHERE name = log_appid`))
+	s, err = scanSetting(d.Query(`SELECT * FROM setting WHERE name = "log_appid"`))
 	if err != nil {
 		return err
 	}
