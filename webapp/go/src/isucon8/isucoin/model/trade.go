@@ -38,12 +38,12 @@ func GetLatestTrade(d QueryExecutor) (*Trade, error) {
 	return scanTrade(d.Query("SELECT * FROM trade ORDER BY id DESC LIMIT 1"))
 }
 
-func GetCandlestickData(d QueryExecutor, mt time.Time, tf string) ([]*CandlestickData, error) {
+func GetCandlestickData(d QueryExecutor, mt time.Time, timeColumnName string) ([]*CandlestickData, error) {
 	query := fmt.Sprintf(`
 		SELECT m.t, a.price, b.price, m.h, m.l
 		FROM (
 			SELECT
-				STR_TO_DATE(DATE_FORMAT(created_at, '%s'), '%s') AS t,
+				%s AS t,
 				MIN(id) AS min_id,
 				MAX(id) AS max_id,
 				MAX(price) AS h,
@@ -55,7 +55,7 @@ func GetCandlestickData(d QueryExecutor, mt time.Time, tf string) ([]*Candlestic
 		JOIN trade a ON a.id = m.min_id
 		JOIN trade b ON b.id = m.max_id
 		ORDER BY m.t
-	`, tf, "%Y-%m-%d %H:%i:%s")
+	`, timeColumnName)
 	return scanCandlestickDatas(d.Query(query, mt))
 }
 
