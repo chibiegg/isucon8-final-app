@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/url"
 	"path"
+	"log"
 	"time"
 )
 
@@ -74,8 +75,7 @@ func (b *Isulogger) Loop() {
 		    messages = append(messages, l)
 		case <-t.C:
 				if len(messages) > 0 {
-					fmt.Println("send_bulk", len(messages))
-					go b.request("/send_bulk", messages)
+					log.Printf("[DEBUG] send_bulk %d", len(messages))
 					messages = make([]*Log, 0)
 				}
 		}
