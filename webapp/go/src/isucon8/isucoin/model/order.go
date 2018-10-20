@@ -58,6 +58,63 @@ func getOrderByIDWithLock(tx *sql.Tx, id int64) (*Order, error) {
 	return scanOrder(tx.Query("SELECT * FROM orders WHERE id = ? FOR UPDATE", id))
 }
 
+type CachedInt64 struct {
+	lastUpdated time.Time
+	val         int64
+}
+
+var (
+	lowestPrice  CachedInt64
+	highestPrice CachedInt64
+)
+
+func InitCaches() {
+	lowestPrice.lastUpdated = time.Date(2000, 1, 1, 1, 1, 1, 0, time.Local)
+	highestPrice.lastUpdated = time.Date(2000, 1, 1, 1, 1, 1, 0, time.Local)
+}
+
+func GetLowestSellPriceOnly(d QueryExecutor) (int64, error) {
+	curTime := time.Now()
+	if lowestPrice.lastUpdated.Add(time.Millisecond * 300).After(curTime) {
+		return lowestPrice.val, nil
+	}
+
+	row, err := d.Query("SELECT price FROM orders WHERE type = ? AND closed_at IS NULL ORDER BY price ASC, created_at ASC LIMIT 1", OrderTypeSell)
+	if err != nil {
+		return -1, err
+	}
+	var val int64
+	if err = row.Scan(&val); err != nil {
+		return -1, err
+	}
+
+	lowestPrice.lastUpdated = curTime
+	lowestPrice.val = val
+
+	return lowestPrice.val, nil
+}
+
+func GetHighestBuyPriceOnly(d QueryExecutor) (int64, error) {
+	curTime := time.Now()
+	if lowestPrice.lastUpdated.Add(time.Millisecond * 300).After(curTime) {
+		return lowestPrice.val, nil
+	}
+
+	row, err := d.Query("SELECT price FROM orders WHERE type = ? AND closed_at IS NULL ORDER BY price DESC, created_at ASC LIMIT 1", OrderTypeBuy)
+	if err != nil {
+		return -1, err
+	}
+	var val int64
+	if err = row.Scan(&val); err != nil {
+		return -1, err
+	}
+
+	lowestPrice.lastUpdated = curTime
+	lowestPrice.val = val
+
+	return lowestPrice.val, nil
+}
+
 func GetLowestSellOrder(d QueryExecutor) (*Order, error) {
 	return scanOrder(d.Query("SELECT * FROM orders WHERE type = ? AND closed_at IS NULL ORDER BY price ASC, created_at ASC LIMIT 1", OrderTypeSell))
 }

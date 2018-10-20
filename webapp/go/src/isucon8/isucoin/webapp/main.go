@@ -62,6 +62,7 @@ func main() {
 	h := controller.NewHandler(db, store)
 	model.InitTcMap(db)
 	model.StartRunTradeGoRoutine(db)
+	model.InitCaches()
 
 	router := httprouter.New()
 	router.POST("/initialize", h.Initialize)
