@@ -38,9 +38,9 @@ func NewHandler(db *sql.DB, store sessions.Store) *Handler {
 	}
 }
 
-func callOtherInit(host string) error {
+func callOtherInit(url string) error {
 	body := &bytes.Buffer{}
-	req, err := http.NewRequest(http.MethodGet, "", body)
+	req, err := http.NewRequest(http.MethodGet, url, body)
 	if err != nil {
 		return err
 	}
@@ -76,7 +76,7 @@ func (h *Handler) Initialize(w http.ResponseWriter, r *http.Request, _ httproute
 		ips := []string{"172.16.15.1", "172.16.15.2", "172.16.15.3", "172.16.15.4"}
 		for _, ip := range ips {
 			// ignore errors
-			callOtherInit(ip + "/internalInitialize")
+			callOtherInit("http://" + ip + ":5000/internalInitialize")
 		}
 
 		h.handleSuccess(w, struct{}{})
