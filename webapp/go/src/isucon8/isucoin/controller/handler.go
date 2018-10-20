@@ -44,7 +44,8 @@ func callOtherInit(url string) error {
 	if err != nil {
 		return err
 	}
-	res, err := http.DefaultClient.Do(req)
+	client := &http.Client{Timeout: time.Duration(3) * time.Second}
+	res, err := client.Do(req)
 	if err != nil {
 		return err
 	}
