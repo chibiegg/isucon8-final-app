@@ -44,15 +44,15 @@ var (
 
 func InitTcMap(d QueryExecutor) {
 	log.Println("init tc map")
-	BaseTime := time.Date(2018, 10, 10, 10, 0, 0, 0, time.Local)
+	BaseTime := time.Date(2018, 10, 16, 10, 0, 0, 0, time.Local)
 
 	tcDeltaMap = make(map[string]*CandlestickStore)
-	tcDeltaMap["created_at_sec"] = &CandlestickStore {make(map[time.Time]*CandlestickData), time.Second, BaseTime, new(sync.Mutex)}
-	tcDeltaMap["created_at_min"] = &CandlestickStore {make(map[time.Time]*CandlestickData), time.Minute, BaseTime, new(sync.Mutex)}
-	tcDeltaMap["created_at_hou"] = &CandlestickStore {make(map[time.Time]*CandlestickData), time.Hour, BaseTime, 	new(sync.Mutex)}
+	tcDeltaMap["created_at_sec"] = &CandlestickStore {make(map[time.Time]*CandlestickData), time.Second, BaseTime.Add(-400 * time.Second), new(sync.Mutex)}
+	tcDeltaMap["created_at_min"] = &CandlestickStore {make(map[time.Time]*CandlestickData), time.Minute, BaseTime.Add(-400 * time.Minute), new(sync.Mutex)}
+	tcDeltaMap["created_at_hou"] = &CandlestickStore {make(map[time.Time]*CandlestickData), time.Hour, BaseTime.Add(-400 * time.Hour), 	new(sync.Mutex)}
 
 	for k,v := range(tcDeltaMap) {
-		v.GetAndCacheIfPossibleInter(d, BaseTime, k)
+		v.GetAndCacheIfPossibleInter(d, BaseTime.Add(v.delta * -300), k)
 	}
 
 }
