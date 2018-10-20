@@ -73,14 +73,14 @@ func (cs *CandlestickStore) GetAndCacheIfPossibleInter(d QueryExecutor, mt time.
 
 	possibleToCache := threshold
 
-	log.Println("calling GetCandlestickData")
+	// log.Println("calling GetCandlestickData")
 
 	res, err := GetCandlestickData(d, cs.cachedLatest, colName)
 	if err != nil {
 		return nil , err;
 	}
 
-	log.Println("called GetCandlestickData")
+	// log.Println("called GetCandlestickData")
 
 	// res MUST be sorted by time
 	cs.m.Lock()
@@ -94,7 +94,7 @@ func (cs *CandlestickStore) GetAndCacheIfPossibleInter(d QueryExecutor, mt time.
 			}
 		}
 	}
-	log.Println("building ans")
+	// log.Println("building ans")
 
 	ans := make([]*CandlestickData, 0)
 
@@ -108,7 +108,7 @@ func (cs *CandlestickStore) GetAndCacheIfPossibleInter(d QueryExecutor, mt time.
 		curTime = curTime.Add(cs.delta)
 	}
 
-	log.Println("building ans")
+  //	log.Println("building ans")
 
 	return ans, nil
 }
@@ -212,10 +212,10 @@ func reserveOrder(d QueryExecutor, order *Order, price int64) (int64, error) {
 
 func commitReservedOrder(tx *sql.Tx, order *Order, targets []*Order, reserves []int64) error {
 	res, err := tx.Exec(`
-INSERT INTO trade (amount, price, created_at, created_at_sec, created_at_min, created_at_hou) 
-VALUES (?, ?, NOW(6), 
-STR_TO_DATE(DATE_FORMAT(NOW(), '%Y-%m-%d %H:%i:%s'), '%Y-%m-%d %H:%i:%s'), 
-STR_TO_DATE(DATE_FORMAT(NOW(), '%Y-%m-%d %H:%i:00'), '%Y-%m-%d %H:%i:%s'), 
+INSERT INTO trade (amount, price, created_at, created_at_sec, created_at_min, created_at_hou)
+VALUES (?, ?, NOW(6),
+STR_TO_DATE(DATE_FORMAT(NOW(), '%Y-%m-%d %H:%i:%s'), '%Y-%m-%d %H:%i:%s'),
+STR_TO_DATE(DATE_FORMAT(NOW(), '%Y-%m-%d %H:%i:00'), '%Y-%m-%d %H:%i:%s'),
 STR_TO_DATE(DATE_FORMAT(NOW(), '%Y-%m-%d %H:00:00'), '%Y-%m-%d %H:%i:%s')
 )`, order.Amount, order.Price)
 	if err != nil {
