@@ -59,6 +59,11 @@ func main() {
 	}
 	store := sessions.NewCookieStore([]byte(SessionSecret))
 
+	err = model.WarmDatabase(db)
+	if err != nil {
+		log.Println("[ERROR] Warm database error ", err)
+	}
+
 	h := controller.NewHandler(db, store)
 	model.InitTcMap(db)
 	model.StartRunTradeGoRoutine(db)

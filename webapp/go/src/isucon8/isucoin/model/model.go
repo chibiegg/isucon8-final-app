@@ -2,7 +2,7 @@ package model
 
 import (
 	"database/sql"
-
+	"log"
 	"github.com/pkg/errors"
 )
 
@@ -32,5 +32,21 @@ func InitBenchmark(d QueryExecutor) error {
 			return errors.Wrapf(err, "query exec failed[%d]", q)
 		}
 	}
+	return nil
+}
+
+func WarmDatabase(d QueryExecutor) error {
+	log.Println("[DEBUG] Start warm database")
+	for _, q := range []string{
+		"SELECT * FROM user ORDER BY id",
+		"SELECT * FROM trade ORDER BY id DESC",
+		"SELECT * FROM orders ORDER BY id DESC",
+	} {
+		if _, err := d.Exec(q); err != nil {
+			return errors.Wrapf(err, "query exec failed[%d]", q)
+		}
+	}
+
+	log.Println("[DEBUG] Finished warm database")
 	return nil
 }
