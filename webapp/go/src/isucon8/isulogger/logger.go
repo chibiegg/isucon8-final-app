@@ -9,7 +9,6 @@ import (
 	"net/http"
 	"net/url"
 	"path"
-	"log"
 	"time"
 )
 
@@ -76,7 +75,7 @@ func (b *Isulogger) Loop() {
 		case <-t.C:
 				if len(messages) > 0 {
 					b.request("/send_bulk", messages)
-					log.Printf("[DEBUG] send_bulk %d", len(messages))
+					// log.Printf("[DEBUG] send_bulk %d", len(messages))
 					messages = make([]*Log, 0)
 				}
 		}
@@ -106,7 +105,7 @@ func (b *Isulogger) request(p string, v interface{}) error {
 	*u = *b.endpoint
 	u.Path = path.Join(u.Path, p)
 
-	log.Println("[DEBUG] isulogger %s", u)
+	// log.Println("[DEBUG] isulogger %s", u)
 	body := &bytes.Buffer{}
 	if err := json.NewEncoder(body).Encode(v); err != nil {
 		return fmt.Errorf("logger json encode failed. err: %s", err)
