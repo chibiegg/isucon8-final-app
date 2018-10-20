@@ -66,7 +66,7 @@ func NewIsulogger(endpoint, appID string) (*Isulogger, error) {
 }
 
 func (b *Isulogger) Loop() {
-	t := time.NewTicker(80 * time.Millisecond) // 80ms秒おきに送信
+	t := time.NewTicker(200 * time.Millisecond) // 200ms秒おきに送信
 	messages := make([]*Log, 0)
 
 	for {
