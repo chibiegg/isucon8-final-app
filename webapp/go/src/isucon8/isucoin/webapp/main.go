@@ -59,6 +59,8 @@ func main() {
 	}
 	store := sessions.NewCookieStore([]byte(SessionSecret))
 
+	model.WarmDatabase(db)
+
 	h := controller.NewHandler(db, store)
 	model.InitTcMap(db)
 	model.StartRunTradeGoRoutine(db)

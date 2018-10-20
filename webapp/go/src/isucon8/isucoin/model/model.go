@@ -34,3 +34,16 @@ func InitBenchmark(d QueryExecutor) error {
 	}
 	return nil
 }
+
+func WarmDatabase(d QueryExecutor) error {
+	for _, q := range []string{
+		"SELECT * FROM user ORDER BY id",
+		"SELECT * FROM trade ORDER BY id DESC LIMIT 10000",
+		"SELECT * FROM orers ORDER BY id DESC LIMIT 10000",
+	} {
+		if _, err := d.Exec(q); err != nil {
+			return errors.Wrapf(err, "query exec failed[%d]", q)
+		}
+	}
+	return nil
+}
