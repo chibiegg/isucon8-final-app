@@ -25,30 +25,67 @@ type Log struct {
 type Isulogger struct {
 	endpoint *url.URL
 	appID    string
+	queue    chan *Log
 }
+
+var isulogger *Isulogger
+
+
+func InitializeIsulogger(endpoint, appID string) error {
+	u, err := url.Parse(endpoint)
+	if err != nil {
+		return err
+	}
+
+	queue := make(chan *Log, 10)
+	isulogger = &Isulogger{
+		endpoint: u,
+		appID:    appID,
+		queue:    queue,
+	}
+
+	go isulogger.Loop()
+	return nil
+}
+
 
 // NewIsulogger はIsuloggerを初期化します
 //
 // endpoint: ISULOGを利用するためのエンドポイントURI
 // appID:    ISULOGを利用するためのアプリケーションID
 func NewIsulogger(endpoint, appID string) (*Isulogger, error) {
-	u, err := url.Parse(endpoint)
-	if err != nil {
-		return nil, err
+	if isulogger == nil {
+		err := InitializeIsulogger(endpoint, appID)
+		if err != nil {
+			return nil, err
+		}
 	}
-	return &Isulogger{
-		endpoint: u,
-		appID:    appID,
-	}, nil
+	return isulogger, nil
+}
+
+func (b *Isulogger) Loop() {
+	t := time.NewTicker(80 * time.Millisecond) // 80ms秒おきに送信
+	messages := make([]*Log, 0)
+
+	for {
+		select {
+		case l := <- b.queue:
+		    messages = append(messages, l)
+		case <-t.C:
+				if len(messages) > 0 {
+					fmt.Println("send_bulk", len(messages))
+					go b.request("/send_bulk", messages)
+					messages = make([]*Log, 0)
+				}
+		}
+	}
 }
 
 // Send はログを送信します
 func (b *Isulogger) Send(tag string, data interface{}) error {
-	return b.request("/send", Log{
-		Tag:  tag,
-		Time: time.Now(),
-		Data: data,
-	})
+	message := &Log{tag, time.Now(), data}
+	b.queue <- message
+	return nil
 }
 
 func (b *Isulogger) request(p string, v interface{}) error {
