@@ -79,17 +79,13 @@ func GetLowestSellPriceOnly(d QueryExecutor) (int64, error) {
 		return lowestPrice.val, nil
 	}
 
-	row, err := d.Query("SELECT price FROM orders WHERE type = ? AND closed_at IS NULL ORDER BY price ASC, created_at ASC LIMIT 1", OrderTypeSell)
+	order, err := GetLowestSellOrder(d)
 	if err != nil {
-		return -1, err
-	}
-	var val int64
-	if err = row.Scan(&val); err != nil {
-		return -1, err
+		return -1, nil
 	}
 
 	lowestPrice.lastUpdated = curTime
-	lowestPrice.val = val
+	lowestPrice.val = order.Price
 
 	return lowestPrice.val, nil
 }
@@ -100,17 +96,13 @@ func GetHighestBuyPriceOnly(d QueryExecutor) (int64, error) {
 		return highestPrice.val, nil
 	}
 
-	row, err := d.Query("SELECT price FROM orders WHERE type = ? AND closed_at IS NULL ORDER BY price DESC, created_at ASC LIMIT 1", OrderTypeBuy)
+	order, err := GetHighestBuyOrder(d)
 	if err != nil {
-		return -1, err
-	}
-	var val int64
-	if err = row.Scan(&val); err != nil {
-		return -1, err
+		return -1, nil
 	}
 
 	highestPrice.lastUpdated = curTime
-	highestPrice.val = val
+	highestPrice.val = order.Price
 
 	return highestPrice.val, nil
 }
