@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/url"
 	"path"
+	"log"
 )
 
 var (
@@ -71,6 +72,8 @@ func (b *Isubank) Check(bankID string, price int64) error {
 		"bank_id": bankID,
 		"price":   price,
 	}
+	log.Printf("[DEBUG] isubank Check %s %#v", b.appID, b.endpoint)
+
 	if err := b.request("/check", v, res); err != nil {
 		return fmt.Errorf("check failed. err: %s", err)
 	}
