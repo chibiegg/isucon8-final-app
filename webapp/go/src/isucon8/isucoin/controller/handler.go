@@ -312,10 +312,12 @@ func (h *Handler) AddOrders(w http.ResponseWriter, r *http.Request, _ httprouter
 	case err != nil:
 		h.handleError(w, err, 500)
 	default:
-		if err := model.RunTrade(h.db); err != nil {
+		cnt, err := model.RunTrade(h.db);
+		if err != nil {
 			// トレードに失敗してもエラーにはしない
 			log.Printf("runTrade err:%s", err)
 		}
+		log.Printf("RunTrade depth = %d", cnt)
 		h.handleSuccess(w, map[string]interface{}{
 			"id": order.ID,
 		})

@@ -329,28 +329,28 @@ func tryTrade(tx *sql.Tx, orderID int64) error {
 	return nil
 }
 
-func RunTrade(db *sql.DB) error {
+func RunTrade(db *sql.DB) (int, error) {
 	lowestSellOrder, err := GetLowestSellOrder(db)
 	switch {
 	case err == sql.ErrNoRows:
 		// 売り注文が無いため成立しない
-		return nil
+		return 0, nil
 	case err != nil:
-		return errors.Wrap(err, "GetLowestSellOrder")
+		return 0, errors.Wrap(err, "GetLowestSellOrder")
 	}
 
 	highestBuyOrder, err := GetHighestBuyOrder(db)
 	switch {
 	case err == sql.ErrNoRows:
 		// 買い注文が無いため成立しない
-		return nil
+		return 0, nil
 	case err != nil:
-		return errors.Wrap(err, "GetHighestBuyOrder")
+		return 0, errors.Wrap(err, "GetHighestBuyOrder")
 	}
 
 	if lowestSellOrder.Price > highestBuyOrder.Price {
 		// 最安の売値が最高の買値よりも高いため成立しない
-		return nil
+		return 0, nil
 	}
 
 	candidates := make([]int64, 0, 2)
@@ -378,14 +378,15 @@ func RunTrade(db *sql.DB) error {
 		switch err {
 		case nil:
 			// トレード成立したため次の取引を行う
-			return RunTrade(db)
+			cnt, err := RunTrade(db)
+			return cnt + 1, err
 		case ErrNoOrderForTrade, ErrOrderAlreadyClosed:
 			// 注文個数の多い方で成立しなかったので少ない方で試す
 			continue
 		default:
-			return err
+			return 0, err
 		}
 	}
 	// 個数のが不足していて不成立
-	return nil
+	return 0, nil
 }
