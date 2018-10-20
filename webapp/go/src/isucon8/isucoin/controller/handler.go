@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"strconv"
 	"time"
+	"math/rand"
 
 	"isucon8/isucoin/model"
 
@@ -256,7 +257,10 @@ func (h *Handler) Info(w http.ResponseWriter, r *http.Request, _ httprouter.Para
 		res["highest_buy_price"] = highestBuyOrder.Price
 	}
 	// TODO: trueにするとシェアボタンが有効になるが、アクセスが増えてヤバイので一旦falseにしておく
-	res["enable_share"] = true
+	res["enable_share"] = false
+	if rand.Intn(8) == 0 {
+		res["enable_share"] = true
+	}
 
 	h.handleSuccess(w, res)
 }
