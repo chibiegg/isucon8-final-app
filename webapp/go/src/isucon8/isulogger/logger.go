@@ -60,6 +60,7 @@ func NewIsulogger(endpoint, appID string) (*Isulogger, error) {
 			return nil, err
 		}
 	}
+	isulogger.update(endpoint,appID)
 	return isulogger, nil
 }
 
@@ -87,6 +88,17 @@ func (b *Isulogger) Send(tag string, data interface{}) error {
 	b.queue <- message
 	return nil
 }
+
+func (b *Isulogger) update(endpoint, appID string) {
+		u, err := url.Parse(endpoint)
+		if err != nil {
+			return
+		}
+
+		isulogger.endpoint = u
+		isulogger.appID = appID
+}
+
 
 func (b *Isulogger) request(p string, v interface{}) error {
 	u := new(url.URL)
