@@ -311,16 +311,9 @@ func (h *Handler) AddOrders(w http.ResponseWriter, r *http.Request, _ httprouter
 	case err != nil:
 		h.handleError(w, err, 500)
 	default:
-		tradeChance, err := model.HasTradeChanceByOrder(h.db, order.ID)
-		if err != nil {
-			h.handleError(w, err, 500)
-			return
-		}
-		if tradeChance {
-			if err := model.RunTrade(h.db); err != nil {
-				// トレードに失敗してもエラーにはしない
-				log.Printf("runTrade err:%s", err)
-			}
+		if err := model.RunTrade(h.db); err != nil {
+			// トレードに失敗してもエラーにはしない
+			log.Printf("runTrade err:%s", err)
 		}
 		h.handleSuccess(w, map[string]interface{}{
 			"id": order.ID,
