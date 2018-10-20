@@ -4,8 +4,6 @@ import (
 	"isucon8/isubank"
 	"isucon8/isulogger"
 	"log"
-
-	"github.com/pkg/errors"
 )
 
 const (
@@ -21,41 +19,56 @@ type Setting struct {
 	Val  string
 }
 
+type InternalSetting struct {
+	bankEndpoint string
+	bankAppid    string
+	logEndpoint  string
+	logAppid     string
+}
+
+var (
+	internalSetting InternalSetting
+)
+
 func SetSetting(d QueryExecutor, k, v string) error {
 	_, err := d.Exec(`INSERT INTO setting (name, val) VALUES (?, ?) ON DUPLICATE KEY UPDATE val = VALUES(val)`, k, v)
 	return err
 }
 
-func GetSetting(d QueryExecutor, k string) (string, error) {
-	s, err := scanSetting(d.Query(`SELECT * FROM setting WHERE name = ?`, k))
+func SyncSetting(d QueryExecutor) error {
+	s, err := scanSetting(d.Query(`SELECT * FROM setting WHERE name = bank_endpoint`))
 	if err != nil {
-		return "", err
+		return err
 	}
-	return s.Val, nil
+	internalSetting.bankEndpoint = s.Val
+
+	s, err = scanSetting(d.Query(`SELECT * FROM setting WHERE name = bank_appid`))
+	if err != nil {
+		return err
+	}
+	internalSetting.bankAppid = s.Val
+
+	s, err = scanSetting(d.Query(`SELECT * FROM setting WHERE name = log_endpoint`))
+	if err != nil {
+		return err
+	}
+	internalSetting.logEndpoint = s.Val
+
+	s, err = scanSetting(d.Query(`SELECT * FROM setting WHERE name = log_appid`))
+	if err != nil {
+		return err
+	}
+	internalSetting.logAppid = s.Val
+
+	return nil
 }
 
 func Isubank(d QueryExecutor) (*isubank.Isubank, error) {
-	ep, err := GetSetting(d, BankEndpoint)
-	if err != nil {
-		return nil, errors.Wrapf(err, "getSetting failed. %s", BankEndpoint)
-	}
-	id, err := GetSetting(d, BankAppid)
-	if err != nil {
-		return nil, errors.Wrapf(err, "getSetting failed. %s", BankAppid)
-	}
-	return isubank.NewIsubank(ep, id)
+	return isubank.NewIsubank(internalSetting.bankEndpoint, internalSetting.logAppid)
 }
 
 func Logger(d QueryExecutor) (*isulogger.Isulogger, error) {
-	ep, err := GetSetting(d, LogEndpoint)
-	if err != nil {
-		return nil, errors.Wrapf(err, "getSetting failed. %s", LogEndpoint)
-	}
-	id, err := GetSetting(d, LogAppid)
-	if err != nil {
-		return nil, errors.Wrapf(err, "getSetting failed. %s", LogAppid)
-	}
-	return isulogger.NewIsulogger(ep, id)
+	return isulogger.NewIsulogger(internalSetting.logEndpoint, internalSetting.logAppid)
 }
 
 func sendLog(d QueryExecutor, tag string, v interface{}) {

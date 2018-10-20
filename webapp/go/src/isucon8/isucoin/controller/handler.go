@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"bytes"
 	"context"
 	"database/sql"
 	"encoding/json"
@@ -37,6 +38,21 @@ func NewHandler(db *sql.DB, store sessions.Store) *Handler {
 	}
 }
 
+func callOtherInit(host string) error {
+	body := &bytes.Buffer{}
+	req, err := http.NewRequest(http.MethodGet, "", body)
+	if err != nil {
+		return err
+	}
+	res, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return err
+	}
+	defer res.Body.Close()
+
+	return nil
+}
+
 func (h *Handler) Initialize(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	err := h.txScope(func(tx *sql.Tx) error {
 		if err := model.InitBenchmark(tx); err != nil {
@@ -54,6 +70,24 @@ func (h *Handler) Initialize(w http.ResponseWriter, r *http.Request, _ httproute
 		}
 		return nil
 	})
+	if err != nil {
+		h.handleError(w, err, 500)
+	} else {
+		ips := []string{"172.16.15.1", "172.16.15.2", "172.16.15.3", "172.16.15.4"}
+		for _, ip := range ips {
+			// ignore errors
+			callOtherInit(ip + "/internalInitialize")
+		}
+
+		h.handleSuccess(w, struct{}{})
+	}
+}
+
+func (h *Handler) InternalInitialize(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+	err := h.txScope(func(tx *sql.Tx) error {
+		return model.SyncSetting(tx)
+	})
+
 	if err != nil {
 		h.handleError(w, err, 500)
 	} else {
@@ -305,6 +339,7 @@ func (h *Handler) DeleteOrders(w http.ResponseWriter, r *http.Request, p httprou
 
 func (h *Handler) CommonMiddleware(f http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// log.Println("CommonMiddleware called");
 		if r.Method == http.MethodPost {
 			if err := r.ParseForm(); err != nil {
 				h.handleError(w, err, 400)

@@ -39,8 +39,8 @@ func main() {
 		port   = getEnv("APP_PORT", "5000")
 		dbhost = getEnv("DB_HOST", "127.0.0.1")
 		dbport = getEnv("DB_PORT", "13306")
-		dbuser = getEnv("DB_USER", "root")
-		dbpass = getEnv("DB_PASSWORD", "")
+		dbuser = getEnv("DB_USER", "isucon")
+		dbpass = getEnv("DB_PASSWORD", "isucon")
 		dbname = getEnv("DB_NAME", "isucoin")
 		public = getEnv("PUBLIC_DIR", "public")
 	)
@@ -61,6 +61,7 @@ func main() {
 
 	router := httprouter.New()
 	router.POST("/initialize", h.Initialize)
+	router.POST("/internalInitialize", h.InternalInitialize)
 	router.POST("/signup", h.Signup)
 	router.POST("/signin", h.Signin)
 	router.POST("/signout", h.Signout)
