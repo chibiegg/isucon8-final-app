@@ -45,7 +45,7 @@ func UserSignup(tx *sql.Tx, name, bankID, password string) error {
 	if err = bank.Check(bankID, 0); err != nil {
 		return ErrBankUserNotFound
 	}
-	pass, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	pass, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.MinCost)
 	if err != nil {
 		return err
 	}
