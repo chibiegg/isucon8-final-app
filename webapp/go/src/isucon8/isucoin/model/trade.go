@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"isucon8/isubank"
 	"log"
+	"sync"
 	"time"
 
 	"github.com/pkg/errors"
@@ -28,6 +29,88 @@ type CandlestickData struct {
 	Close int64     `json:"close"`
 	High  int64     `json:"high"`
 	Low   int64     `json:"low"`
+}
+
+type CandlestickStore struct {
+	tcMap map[time.Time]*CandlestickData
+	delta time.Duration
+	cachedLatest time.Time
+	m *sync.Mutex
+}
+
+var (
+	tcDeltaMap map[string]*CandlestickStore
+)
+
+func InitTcMap(d QueryExecutor) {
+	log.Println("init tc map")
+	BaseTime := time.Date(2018, 10, 16, 10, 0, 0, 0, time.Local)
+
+	tcDeltaMap = make(map[string]*CandlestickStore)
+	tcDeltaMap["created_at_sec"] = &CandlestickStore {make(map[time.Time]*CandlestickData), time.Second, BaseTime.Add(-400 * time.Second), new(sync.Mutex)}
+	tcDeltaMap["created_at_min"] = &CandlestickStore {make(map[time.Time]*CandlestickData), time.Minute, BaseTime.Add(-400 * time.Minute), new(sync.Mutex)}
+	tcDeltaMap["created_at_hou"] = &CandlestickStore {make(map[time.Time]*CandlestickData), time.Hour, BaseTime.Add(-400 * time.Hour), 	new(sync.Mutex)}
+
+	for k,v := range(tcDeltaMap) {
+		v.GetAndCacheIfPossibleInter(d, BaseTime.Add(v.delta * -300), k)
+	}
+
+}
+
+func GetAndCacheIfPossible(d QueryExecutor, mt time.Time, colName string) ([]*CandlestickData, error) {
+	return tcDeltaMap[colName].GetAndCacheIfPossibleInter(d, mt, colName)
+}
+
+func (cs *CandlestickStore) GetAndCacheIfPossibleInter(d QueryExecutor, mt time.Time, colName string) ([]*CandlestickData, error) {
+	threshold := time.Now()
+	if cs.delta == time.Second {
+		threshold = time.Date(threshold.Year(), threshold.Month(), threshold.Day(), threshold.Hour(), threshold.Minute(), threshold.Second(), 0, time.Local)
+	} else if cs.delta == time.Minute {
+		threshold = time.Date(threshold.Year(), threshold.Month(), threshold.Day(), threshold.Hour(), threshold.Minute(), 0, 0, time.Local)
+	} else if cs.delta == time.Hour {
+		threshold = time.Date(threshold.Year(), threshold.Month(), threshold.Day(), threshold.Hour(), 0, 0, 0, time.Local)
+	}
+
+	possibleToCache := threshold
+
+	// log.Println("calling GetCandlestickData")
+
+	res, err := GetCandlestickData(d, cs.cachedLatest, colName)
+	if err != nil {
+		return nil , err;
+	}
+
+	// log.Println("called GetCandlestickData")
+
+	// res MUST be sorted by time
+	cs.m.Lock()
+	defer cs.m.Unlock()
+
+	for _, val := range res {
+		if cs.cachedLatest.Before(val.Time) {
+			cs.tcMap[val.Time] = val
+			if val.Time.Before(possibleToCache) {
+				cs.cachedLatest = val.Time
+			}
+		}
+	}
+	// log.Println("building ans")
+
+	ans := make([]*CandlestickData, 0)
+
+	curTime := mt;
+	for curTime.Before(possibleToCache) {
+		val, ok := cs.tcMap[curTime]
+		if ok {
+			ans = append(ans, val)
+		}
+
+		curTime = curTime.Add(cs.delta)
+	}
+
+  //	log.Println("building ans")
+
+	return ans, nil
 }
 
 func GetTradeByID(d QueryExecutor, id int64) (*Trade, error) {
@@ -56,6 +139,7 @@ func GetCandlestickData(d QueryExecutor, mt time.Time, timeColumnName string) ([
 		JOIN trade b ON b.id = m.max_id
 		ORDER BY m.t
 	`, timeColumnName)
+
 	return scanCandlestickDatas(d.Query(query, mt))
 }
 
@@ -128,10 +212,10 @@ func reserveOrder(d QueryExecutor, order *Order, price int64) (int64, error) {
 
 func commitReservedOrder(tx *sql.Tx, order *Order, targets []*Order, reserves []int64) error {
 	res, err := tx.Exec(`
-INSERT INTO trade (amount, price, created_at, created_at_sec, created_at_min, created_at_hou) 
-VALUES (?, ?, NOW(6), 
-STR_TO_DATE(DATE_FORMAT(NOW(), '%Y-%m-%d %H:%i:%s'), '%Y-%m-%d %H:%i:%s'), 
-STR_TO_DATE(DATE_FORMAT(NOW(), '%Y-%m-%d %H:%i:00'), '%Y-%m-%d %H:%i:%s'), 
+INSERT INTO trade (amount, price, created_at, created_at_sec, created_at_min, created_at_hou)
+VALUES (?, ?, NOW(6),
+STR_TO_DATE(DATE_FORMAT(NOW(), '%Y-%m-%d %H:%i:%s'), '%Y-%m-%d %H:%i:%s'),
+STR_TO_DATE(DATE_FORMAT(NOW(), '%Y-%m-%d %H:%i:00'), '%Y-%m-%d %H:%i:%s'),
 STR_TO_DATE(DATE_FORMAT(NOW(), '%Y-%m-%d %H:00:00'), '%Y-%m-%d %H:%i:%s')
 )`, order.Amount, order.Price)
 	if err != nil {
