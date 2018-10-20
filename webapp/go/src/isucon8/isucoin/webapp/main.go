@@ -59,7 +59,10 @@ func main() {
 	}
 	store := sessions.NewCookieStore([]byte(SessionSecret))
 
-	model.WarmDatabase(db)
+	err = model.WarmDatabase(db)
+	if err != nil {
+		log.Println("[ERROR] Warm database error ", err)
+	}
 
 	h := controller.NewHandler(db, store)
 	model.InitTcMap(db)
