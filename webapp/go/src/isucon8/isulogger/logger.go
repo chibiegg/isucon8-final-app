@@ -37,9 +37,11 @@ func InitializeIsulogger(endpoint, appID string) error {
 		return err
 	}
 
+	queue := make(chan *Log, 10)
 	isulogger = &Isulogger{
 		endpoint: u,
 		appID:    appID,
+		queue:    queue,
 	}
 
 	go isulogger.Loop()
