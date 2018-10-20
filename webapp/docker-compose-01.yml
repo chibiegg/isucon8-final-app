@@ -5,6 +5,7 @@ services:
     volumes:
       - ./nginx-01:/etc/nginx
       - ./log:/log
+      - ./public:/public
     ports:
       - "443:443"
     links:
