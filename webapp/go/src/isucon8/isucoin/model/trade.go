@@ -343,7 +343,7 @@ func DemarkRunTrade() {
 
 func StartRunTradeGoRoutine(db *sql.DB) {
 	go func() {
-		t := time.NewTicker(time.Millisecond * 300)
+		t := time.NewTicker(time.Millisecond * 600)
 		for{
 			<- t.C
 			if runRunTrade {
