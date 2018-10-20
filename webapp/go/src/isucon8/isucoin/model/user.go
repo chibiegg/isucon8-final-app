@@ -17,8 +17,23 @@ type User struct {
 	CreatedAt time.Time `json:"-"`
 }
 
+var userCache map[int64]*User
+
+func InitUserCache() {
+	userCache = make(map[int64]*User)
+}
+
 func GetUserByID(d QueryExecutor, id int64) (*User, error) {
-	return scanUser(d.Query("SELECT * FROM user WHERE id = ?", id))
+	user, ok := userCache[id]
+	if ok {
+		return user, nil
+	}
+
+	user, err := scanUser(d.Query("SELECT * FROM user WHERE id = ?", id))
+	if err == nil && user != nil {
+		userCache[id] = user
+	}
+	return user, err
 }
 
 func UserSignup(tx *sql.Tx, name, bankID, password string) error {
