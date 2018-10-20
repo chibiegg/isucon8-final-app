@@ -5,11 +5,11 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"strconv"
 	"time"
-	"fmt"
 
 	"isucon8/isucoin/model"
 
@@ -93,6 +93,7 @@ func (h *Handler) InternalInitialize(w http.ResponseWriter, r *http.Request, _ h
 	err := h.txScope(func(tx *sql.Tx) error {
 		return model.SyncSetting(tx)
 	})
+	model.DemarkRunTrade()
 	model.InitTcMap(h.db)
 	model.InitUserCache()
 
@@ -221,7 +222,7 @@ func (h *Handler) Info(w http.ResponseWriter, r *http.Request, _ httprouter.Para
 	sec, ok := candleCache[key]
 	if ok {
 		res["chart_by_sec"] = sec
-	}else{
+	} else {
 		res["chart_by_sec"], err = model.GetAndCacheIfPossible(h.db, bySecTime, "created_at_sec")
 		candleCache[key] = res["chart_by_sec"]
 	}
@@ -240,7 +241,7 @@ func (h *Handler) Info(w http.ResponseWriter, r *http.Request, _ httprouter.Para
 	min, ok := candleCache[key]
 	if ok {
 		res["chart_by_min"] = min
-	}else{
+	} else {
 		res["chart_by_min"], err = model.GetAndCacheIfPossible(h.db, byMinTime, "created_at_min")
 		candleCache[key] = res["chart_by_min"]
 	}
@@ -259,7 +260,7 @@ func (h *Handler) Info(w http.ResponseWriter, r *http.Request, _ httprouter.Para
 	hou, ok := candleCache[key]
 	if ok {
 		res["chart_by_hour"] = hou
-	}else{
+	} else {
 		res["chart_by_hour"], err = model.GetAndCacheIfPossible(h.db, byHourTime, "created_at_hou")
 		candleCache[key] = res["chart_by_hour"]
 	}
@@ -312,10 +313,7 @@ func (h *Handler) AddOrders(w http.ResponseWriter, r *http.Request, _ httprouter
 	case err != nil:
 		h.handleError(w, err, 500)
 	default:
-		if err := model.RunTrade(h.db); err != nil {
-			// トレードに失敗してもエラーにはしない
-			log.Printf("runTrade err:%s", err)
-		}
+		model.MarkRunTrade()
 		h.handleSuccess(w, map[string]interface{}{
 			"id": order.ID,
 		})
