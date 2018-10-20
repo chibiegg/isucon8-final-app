@@ -75,7 +75,7 @@ func InitCaches() {
 
 func GetLowestSellPriceOnly(d QueryExecutor) (int64, error) {
 	curTime := time.Now()
-	if lowestPrice.lastUpdated.Add(time.Millisecond * 300).After(curTime) {
+	if lowestPrice.lastUpdated.Add(time.Millisecond * 1000).After(curTime) {
 		return lowestPrice.val, nil
 	}
 
@@ -92,7 +92,7 @@ func GetLowestSellPriceOnly(d QueryExecutor) (int64, error) {
 
 func GetHighestBuyPriceOnly(d QueryExecutor) (int64, error) {
 	curTime := time.Now()
-	if highestPrice.lastUpdated.Add(time.Millisecond * 300).After(curTime) {
+	if highestPrice.lastUpdated.Add(time.Millisecond * 1000).After(curTime) {
 		return highestPrice.val, nil
 	}
 
