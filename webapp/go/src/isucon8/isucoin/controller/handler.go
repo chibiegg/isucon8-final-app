@@ -94,6 +94,7 @@ func (h *Handler) InternalInitialize(w http.ResponseWriter, r *http.Request, _ h
 		return model.SyncSetting(tx)
 	})
 	model.InitTcMap(h.db)
+	model.InitUserCache()
 
 	if err != nil {
 		h.handleError(w, err, 500)
