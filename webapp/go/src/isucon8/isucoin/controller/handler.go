@@ -290,7 +290,7 @@ func (h *Handler) Info(w http.ResponseWriter, r *http.Request, _ httprouter.Para
 	}
 	// TODO: trueにするとシェアボタンが有効になるが、アクセスが増えてヤバイので一旦falseにしておく
 	res["enable_share"] = false
-	if rand.Intn(8) == 0 {
+	if rand.Intn(5) == 0 || true {
 		res["enable_share"] = true
 	}
 
