@@ -1,0 +1,23 @@
+---
+- name: set hostname
+  hostname: name="{{inventory_hostname_short}}"
+  tags: hostname
+
+- name: set hostname
+  lineinfile: dest=/etc/hostname regexp=.* line={{inventory_hostname_short}}
+  tags: hostname
+
+- file: path="/home/isucon/.ssh" state=directory owner="isucon" group="isucon" mode=0700
+  tags: users
+
+- name: ssh files
+  copy: src="{{ item }}" dest="/home/isucon/.ssh/{{ item }}" owner="isucon" group="isucon" mode=0600
+  tags: users
+  with_items:
+    - authorized_keys
+    - id_rsa
+    - id_rsa.pub
+
+- name: configure sudoers
+  template: src=00_common.sudo.j2 dest=/etc/sudoers.d/00_common owner=root group=root mode=0440
+  tags: users
