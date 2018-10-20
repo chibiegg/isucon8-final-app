@@ -114,7 +114,7 @@ func scanTrades(rows *sql.Rows, e error) (trades []*Trade, err error) {
 	trades = []*Trade{}
 	for rows.Next() {
 		var v Trade
-		if err = rows.Scan(&v.ID, &v.Amount, &v.Price, &v.CreatedAt); err != nil {
+		if err = rows.Scan(&v.ID, &v.Amount, &v.Price, &v.CreatedAt, &v.CreatedAtSec, &v.CreatedAtMin, &v.CreatedAtHou); err != nil {
 			return
 		}
 		trades = append(trades, &v)
