@@ -96,6 +96,7 @@ func (h *Handler) InternalInitialize(w http.ResponseWriter, r *http.Request, _ h
 	model.DemarkRunTrade()
 	model.InitTcMap(h.db)
 	model.InitUserCache()
+	model.InitCaches()
 
 	if err != nil {
 		h.handleError(w, err, 500)
@@ -270,24 +271,24 @@ func (h *Handler) Info(w http.ResponseWriter, r *http.Request, _ httprouter.Para
 		return
 	}
 
-	lowestSellOrder, err := model.GetLowestSellOrder(h.db)
+	lowestSellOrderPrice, err := model.GetLowestSellPriceOnly(h.db)
 	switch {
 	case err == sql.ErrNoRows:
 	case err != nil:
 		h.handleError(w, errors.Wrap(err, "model.GetLowestSellOrder"), 500)
 		return
 	default:
-		res["lowest_sell_price"] = lowestSellOrder.Price
+		res["lowest_sell_price"] = lowestSellOrderPrice
 	}
 
-	highestBuyOrder, err := model.GetHighestBuyOrder(h.db)
+	highestBuyOrderPrice, err := model.GetHighestBuyPriceOnly(h.db)
 	switch {
 	case err == sql.ErrNoRows:
 	case err != nil:
 		h.handleError(w, errors.Wrap(err, "model.GetHighestBuyOrder"), 500)
 		return
 	default:
-		res["highest_buy_price"] = highestBuyOrder.Price
+		res["highest_buy_price"] = highestBuyOrderPrice
 	}
 	// TODO: trueにするとシェアボタンが有効になるが、アクセスが増えてヤバイので一旦falseにしておく
 	res["enable_share"] = true
