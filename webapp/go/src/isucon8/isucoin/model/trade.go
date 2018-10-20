@@ -32,10 +32,10 @@ type CandlestickData struct {
 }
 
 type CandlestickStore struct {
-	tcMap map[time.Time]*CandlestickData
-	delta time.Duration
+	tcMap        map[time.Time]*CandlestickData
+	delta        time.Duration
 	cachedLatest time.Time
-	m *sync.Mutex
+	m            *sync.Mutex
 }
 
 var (
@@ -47,12 +47,12 @@ func InitTcMap(d QueryExecutor) {
 	BaseTime := time.Date(2018, 10, 16, 10, 0, 0, 0, time.Local)
 
 	tcDeltaMap = make(map[string]*CandlestickStore)
-	tcDeltaMap["created_at_sec"] = &CandlestickStore {make(map[time.Time]*CandlestickData), time.Second, BaseTime.Add(-400 * time.Second), new(sync.Mutex)}
-	tcDeltaMap["created_at_min"] = &CandlestickStore {make(map[time.Time]*CandlestickData), time.Minute, BaseTime.Add(-400 * time.Minute), new(sync.Mutex)}
-	tcDeltaMap["created_at_hou"] = &CandlestickStore {make(map[time.Time]*CandlestickData), time.Hour, BaseTime.Add(-400 * time.Hour), 	new(sync.Mutex)}
+	tcDeltaMap["created_at_sec"] = &CandlestickStore{make(map[time.Time]*CandlestickData), time.Second, BaseTime.Add(-400 * time.Second), new(sync.Mutex)}
+	tcDeltaMap["created_at_min"] = &CandlestickStore{make(map[time.Time]*CandlestickData), time.Minute, BaseTime.Add(-400 * time.Minute), new(sync.Mutex)}
+	tcDeltaMap["created_at_hou"] = &CandlestickStore{make(map[time.Time]*CandlestickData), time.Hour, BaseTime.Add(-400 * time.Hour), new(sync.Mutex)}
 
-	for k,v := range(tcDeltaMap) {
-		v.GetAndCacheIfPossibleInter(d, BaseTime.Add(v.delta * -300), k)
+	for k, v := range tcDeltaMap {
+		v.GetAndCacheIfPossibleInter(d, BaseTime.Add(v.delta*-300), k)
 	}
 
 }
@@ -77,7 +77,7 @@ func (cs *CandlestickStore) GetAndCacheIfPossibleInter(d QueryExecutor, mt time.
 
 	res, err := GetCandlestickData(d, cs.cachedLatest, colName)
 	if err != nil {
-		return nil , err;
+		return nil, err
 	}
 
 	// log.Println("called GetCandlestickData")
@@ -98,7 +98,7 @@ func (cs *CandlestickStore) GetAndCacheIfPossibleInter(d QueryExecutor, mt time.
 
 	ans := make([]*CandlestickData, 0)
 
-	curTime := mt;
+	curTime := mt
 	for curTime.Before(possibleToCache) {
 		val, ok := cs.tcMap[curTime]
 		if ok {
@@ -108,7 +108,7 @@ func (cs *CandlestickStore) GetAndCacheIfPossibleInter(d QueryExecutor, mt time.
 		curTime = curTime.Add(cs.delta)
 	}
 
-  //	log.Println("building ans")
+	//	log.Println("building ans")
 
 	return ans, nil
 }
@@ -329,28 +329,56 @@ func tryTrade(tx *sql.Tx, orderID int64) error {
 	return nil
 }
 
-func RunTrade(db *sql.DB) error {
+var (
+	runRunTrade bool
+)
+
+func MarkRunTrade() {
+	runRunTrade = true
+}
+
+func DemarkRunTrade() {
+	runRunTrade = false
+}
+
+func StartRunTradeGoRoutine(db *sql.DB) {
+	go func() {
+		if runRunTrade {
+			runRunTrade = false
+
+			cnt, err := RunTrade(db)
+			if err != nil {
+				log.Println("error happened")
+			}
+			log.Println("RunTrade = ", cnt)
+		}
+		time.Sleep(time.Millisecond * 300)
+	}()
+
+}
+
+func RunTrade(db *sql.DB) (int, error) {
 	lowestSellOrder, err := GetLowestSellOrder(db)
 	switch {
 	case err == sql.ErrNoRows:
 		// 売り注文が無いため成立しない
-		return nil
+		return 0, nil
 	case err != nil:
-		return errors.Wrap(err, "GetLowestSellOrder")
+		return 0, errors.Wrap(err, "GetLowestSellOrder")
 	}
 
 	highestBuyOrder, err := GetHighestBuyOrder(db)
 	switch {
 	case err == sql.ErrNoRows:
 		// 買い注文が無いため成立しない
-		return nil
+		return 0, nil
 	case err != nil:
-		return errors.Wrap(err, "GetHighestBuyOrder")
+		return 0, errors.Wrap(err, "GetHighestBuyOrder")
 	}
 
 	if lowestSellOrder.Price > highestBuyOrder.Price {
 		// 最安の売値が最高の買値よりも高いため成立しない
-		return nil
+		return 0, nil
 	}
 
 	candidates := make([]int64, 0, 2)
@@ -378,14 +406,15 @@ func RunTrade(db *sql.DB) error {
 		switch err {
 		case nil:
 			// トレード成立したため次の取引を行う
-			return RunTrade(db)
+			cnt, err := RunTrade(db)
+			return cnt + 1, err
 		case ErrNoOrderForTrade, ErrOrderAlreadyClosed:
 			// 注文個数の多い方で成立しなかったので少ない方で試す
 			continue
 		default:
-			return err
+			return 0, err
 		}
 	}
 	// 個数のが不足していて不成立
-	return nil
+	return 0, nil
 }
