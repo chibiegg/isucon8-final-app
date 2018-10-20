@@ -21,10 +21,6 @@ func GetUserByID(d QueryExecutor, id int64) (*User, error) {
 	return scanUser(d.Query("SELECT * FROM user WHERE id = ?", id))
 }
 
-func getUserByIDWithLock(tx *sql.Tx, id int64) (*User, error) {
-	return scanUser(tx.Query("SELECT * FROM user WHERE id = ? FOR UPDATE", id))
-}
-
 func UserSignup(tx *sql.Tx, name, bankID, password string) error {
 	bank, err := Isubank(tx)
 	if err != nil {
