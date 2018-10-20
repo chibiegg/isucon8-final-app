@@ -6,7 +6,9 @@ import (
 	"isucon8/isucoin/controller"
 	"isucon8/isucoin/model"
 	"log"
+	"net"
 	"net/http"
+	_ "net/http/pprof"
 	"os"
 	"time"
 
@@ -45,6 +47,14 @@ func main() {
 		dbname = getEnv("DB_NAME", "isucoin")
 		public = getEnv("PUBLIC_DIR", "public")
 	)
+
+	// pprof handler
+	l, err := net.Listen("tcp", ":52362")
+	if err != nil {
+		panic(err)
+	}
+	fmt.Printf("Listening on %s\n", l.Addr())
+	go http.Serve(l, nil)
 
 	dbusrpass := dbuser
 	if dbpass != "" {
