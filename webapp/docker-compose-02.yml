@@ -1,0 +1,19 @@
+version: '2'
+services:
+
+  mysql:
+    image: mysql:8
+    environment:
+      - "TZ=Asia/Tokyo"
+      - "MYSQL_ROOT_PASSWORD=root"
+    volumes:
+      - mysql:/var/lib/mysql
+      - ./sql:/docker-entrypoint-initdb.d
+      - ./mysql/conf.d:/etc/mysql/conf.d
+      - ./log:/log
+    # development only
+    ports:
+      - "13306:3306"
+
+volumes:
+  mysql:
