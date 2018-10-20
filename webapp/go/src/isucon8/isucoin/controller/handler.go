@@ -210,7 +210,7 @@ func (h *Handler) Info(w http.ResponseWriter, r *http.Request, _ httprouter.Para
 	if lt.After(bySecTime) {
 		bySecTime = time.Date(lt.Year(), lt.Month(), lt.Day(), lt.Hour(), lt.Minute(), lt.Second(), 0, lt.Location())
 	}
-	res["chart_by_sec"], err = model.GetCandlestickData(h.db, bySecTime, "created_at_sec")
+	res["chart_by_sec"], err = model.GetAndCacheIfPossible(h.db, bySecTime, "created_at_sec")
 	if err != nil {
 		h.handleError(w, errors.Wrap(err, "model.GetCandlestickData by sec"), 500)
 		return
@@ -220,7 +220,7 @@ func (h *Handler) Info(w http.ResponseWriter, r *http.Request, _ httprouter.Para
 	if lt.After(byMinTime) {
 		byMinTime = time.Date(lt.Year(), lt.Month(), lt.Day(), lt.Hour(), lt.Minute(), 0, 0, lt.Location())
 	}
-	res["chart_by_min"], err = model.GetCandlestickData(h.db, byMinTime, "created_at_min")
+	res["chart_by_min"], err = model.GetAndCacheIfPossible(h.db, byMinTime, "created_at_min")
 	if err != nil {
 		h.handleError(w, errors.Wrap(err, "model.GetCandlestickData by min"), 500)
 		return
@@ -230,7 +230,7 @@ func (h *Handler) Info(w http.ResponseWriter, r *http.Request, _ httprouter.Para
 	if lt.After(byHourTime) {
 		byHourTime = time.Date(lt.Year(), lt.Month(), lt.Day(), lt.Hour(), 0, 0, 0, lt.Location())
 	}
-	res["chart_by_hour"], err = model.GetCandlestickData(h.db, byHourTime, "created_at_hou")
+	res["chart_by_hour"], err = model.GetAndCacheIfPossible(h.db, byHourTime, "created_at_hou")
 	if err != nil {
 		h.handleError(w, errors.Wrap(err, "model.GetCandlestickData by hour"), 500)
 		return
