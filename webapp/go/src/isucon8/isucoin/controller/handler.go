@@ -75,7 +75,7 @@ func (h *Handler) Initialize(w http.ResponseWriter, r *http.Request, _ httproute
 	if err != nil {
 		h.handleError(w, err, 500)
 	} else {
-		ips := []string{"172.16.15.1", "172.16.15.2", "172.16.15.3", "172.16.15.4"}
+		ips := []string{"127.0.0.1", "172.16.15.2", "172.16.15.3", "172.16.15.4"}
 		for _, ip := range ips {
 			// ignore errors
 			callOtherInit("http://" + ip + ":5000/internalInitialize")
