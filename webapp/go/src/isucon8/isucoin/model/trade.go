@@ -83,8 +83,8 @@ func (cs *CandlestickStore) GetAndCacheIfPossibleInter(d QueryExecutor, mt time.
 	// log.Println("called GetCandlestickData")
 
 	// res MUST be sorted by time
-	cs.m.Lock()
-	defer cs.m.Unlock()
+	// cs.m.Lock()
+	// defer cs.m.Unlock()
 
 	for _, val := range res {
 		if cs.cachedLatest.Before(val.Time) {
