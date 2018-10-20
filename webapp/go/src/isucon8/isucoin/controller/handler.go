@@ -10,6 +10,7 @@ import (
 	"strconv"
 	"time"
 	"math/rand"
+	"fmt"
 
 	"isucon8/isucoin/model"
 
@@ -24,6 +25,8 @@ const (
 
 var BaseTime time.Time
 
+var candleCache map[string]interface{}
+
 type Handler struct {
 	db    *sql.DB
 	store sessions.Store
@@ -33,6 +36,7 @@ func NewHandler(db *sql.DB, store sessions.Store) *Handler {
 	// ISUCON用初期データの基準時間です
 	// この時間以降のデータはInitializeで削除されます
 	BaseTime = time.Date(2018, 10, 16, 10, 0, 0, 0, time.Local)
+	candleCache = make(map[string]interface{})
 	return &Handler{
 		db:    db,
 		store: store,
@@ -212,7 +216,16 @@ func (h *Handler) Info(w http.ResponseWriter, r *http.Request, _ httprouter.Para
 	if lt.After(bySecTime) {
 		bySecTime = time.Date(lt.Year(), lt.Month(), lt.Day(), lt.Hour(), lt.Minute(), lt.Second(), 0, lt.Location())
 	}
-	res["chart_by_sec"], err = model.GetAndCacheIfPossible(h.db, bySecTime, "created_at_sec")
+
+	key := fmt.Sprintf("s_%d", bySecTime.Unix())
+	sec, ok := candleCache[key]
+	if ok {
+		res["chart_by_sec"] = sec
+	}else{
+		res["chart_by_sec"], err = model.GetAndCacheIfPossible(h.db, bySecTime, "created_at_sec")
+		candleCache[key] = res["chart_by_sec"]
+	}
+
 	if err != nil {
 		h.handleError(w, errors.Wrap(err, "model.GetCandlestickData by sec"), 500)
 		return
@@ -222,7 +235,16 @@ func (h *Handler) Info(w http.ResponseWriter, r *http.Request, _ httprouter.Para
 	if lt.After(byMinTime) {
 		byMinTime = time.Date(lt.Year(), lt.Month(), lt.Day(), lt.Hour(), lt.Minute(), 0, 0, lt.Location())
 	}
-	res["chart_by_min"], err = model.GetAndCacheIfPossible(h.db, byMinTime, "created_at_min")
+
+	key = fmt.Sprintf("m_%d", byMinTime.Unix())
+	min, ok := candleCache[key]
+	if ok {
+		res["chart_by_min"] = min
+	}else{
+		res["chart_by_min"], err = model.GetAndCacheIfPossible(h.db, byMinTime, "created_at_min")
+		candleCache[key] = res["chart_by_min"]
+	}
+
 	if err != nil {
 		h.handleError(w, errors.Wrap(err, "model.GetCandlestickData by min"), 500)
 		return
@@ -232,7 +254,16 @@ func (h *Handler) Info(w http.ResponseWriter, r *http.Request, _ httprouter.Para
 	if lt.After(byHourTime) {
 		byHourTime = time.Date(lt.Year(), lt.Month(), lt.Day(), lt.Hour(), 0, 0, 0, lt.Location())
 	}
-	res["chart_by_hour"], err = model.GetAndCacheIfPossible(h.db, byHourTime, "created_at_hou")
+
+	key = fmt.Sprintf("h_%d", byHourTime.Unix())
+	hou, ok := candleCache[key]
+	if ok {
+		res["chart_by_hour"] = hou
+	}else{
+		res["chart_by_hour"], err = model.GetAndCacheIfPossible(h.db, byHourTime, "created_at_hou")
+		candleCache[key] = res["chart_by_hour"]
+	}
+
 	if err != nil {
 		h.handleError(w, errors.Wrap(err, "model.GetCandlestickData by hour"), 500)
 		return
