@@ -60,6 +60,7 @@ func SyncSetting(d QueryExecutor) error {
 	}
 	internalSetting.logAppid = s.Val
 
+	log.Println("[DEBUG] SyncSetting %#v", internalSetting)
 	return nil
 }
 
