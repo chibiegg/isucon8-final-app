@@ -3,7 +3,7 @@ services:
   nginx:
     image: nginx:1.15.3-alpine
     volumes:
-      - ./nginx-01:/etc/nginx
+      - ./nginx:/etc/nginx
       - ./log:/log
     ports:
       - "443:443"
