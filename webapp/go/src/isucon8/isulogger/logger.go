@@ -42,6 +42,7 @@ func InitializeIsulogger(endpoint, appID string) error {
 		appID:    appID,
 	}
 
+	go isulogger.Loop()
 	return nil
 }
 
