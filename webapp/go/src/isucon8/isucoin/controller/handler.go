@@ -40,7 +40,7 @@ func NewHandler(db *sql.DB, store sessions.Store) *Handler {
 
 func callOtherInit(url string) error {
 	body := &bytes.Buffer{}
-	req, err := http.NewRequest(http.MethodGet, url, body)
+	req, err := http.NewRequest(http.MethodPost, url, body)
 	if err != nil {
 		return err
 	}
